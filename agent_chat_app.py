@@ -1,15 +1,18 @@
-import streamlit as st
-from dotenv import load_dotenv
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Qdrant
-from langchain.chat_models import ChatOpenAI
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationalRetrievalChain
-from langchain.retrievers import ContextualCompressionRetriever
-from langchain.retrievers.document_compressors import CohereRerank
-from qdrant_client import QdrantClient
 import os
 import time
+
+import streamlit as st
+from dotenv import load_dotenv
+from langchain.agents.agent_toolkits import (
+    create_conversational_retrieval_agent, create_retriever_tool)
+from langchain.chat_models import ChatOpenAI
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.retrievers import ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import CohereRerank
+from langchain.schema.messages import SystemMessage
+from langchain.vectorstores import Qdrant
+from qdrant_client import QdrantClient
+from langchain.agents import initialize_agent, AgentType
 
 def get_vector_store():
     """
@@ -34,33 +37,36 @@ def get_vector_store():
     
     return vector_store
 
-def get_conversation_chain(vectorstore):
-    """
-    Creates and returns a conversational retrieval chain.
-
-    This function sets up a conversational retrieval chain using the ChatOpenAI model (specifically GPT-4),
-    along with a memory buffer for storing and returning chat history. The retrieval chain is configured
-    to use the provided vector store as its retriever.
-
-    :param vectorstore: The vector store to be used as the retriever in the conversation chain.
-    :return: A ConversationalRetrievalChain instance configured with a language model, retriever, and memory.
-    """
-    llm = ChatOpenAI(model="gpt-4")
-
-    memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+def get_conversation_agent(vectorstore):
 
     compression_retriever = ContextualCompressionRetriever(
         base_compressor=CohereRerank(),
         base_retriever=vectorstore.as_retriever(search_kwargs={'k': 20})
     )
-
-    conversation_chain = ConversationalRetrievalChain.from_llm(
-        llm=llm,
-        retriever=compression_retriever,
-        memory=memory,
-        verbose=True
+    qdrant_mm_retrival_tool = create_retriever_tool(
+        compression_retriever,
+        "search_multimodality",
+        "Searches and returns documents regarding multimodality.",
     )
-    return conversation_chain
+    tools = [qdrant_mm_retrival_tool]
+
+    llm = ChatOpenAI(model="gpt-4")
+    # agent_executor = create_conversational_retrieval_agent(
+    #     llm,
+    #     tools,
+    #     system_message=SystemMessage(
+    #         content="""
+    #             You are a conversational assistant that has access to the tool called search_multimodality, this tool allows you to search and retrieve documents related to multimodality or anything that you're not sure about.
+    #             If you don't have and answer, try invoking this tool. If user asks for something that seems related to multimodality always first use the tool."""),
+    #     remember_intermediate_steps=True,
+    #     verbose=True
+    # )
+
+    react_agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
+
+    return react_agent
+
+    
 
 def main():
     load_dotenv()
@@ -72,7 +78,7 @@ def main():
     st.title("Chat with Multimodality documents :books:")
 
     vectorstore = get_vector_store()
-    st.session_state.conversation = get_conversation_chain(vectorstore)
+    st.session_state.conversation_agent = get_conversation_agent(vectorstore)
 
     # Display chat messages from history
     for message in st.session_state.messages:
@@ -88,8 +94,8 @@ def main():
             st.markdown(user_question)
 
         # Get response from conversation chain
-        response = st.session_state.conversation({'question': user_question})
-        assistant_answer = response['answer']
+        response = st.session_state.conversation_agent({'input': user_question})
+        assistant_answer = response['output']
 
         # Add bot response to chat history and display
         with st.chat_message("assistant"):

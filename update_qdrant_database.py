@@ -1,11 +1,14 @@
 import logging
 import os
+
 from docx import Document
+from dotenv import load_dotenv
+from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import Qdrant
-from langchain.embeddings.openai import OpenAIEmbeddings
 from qdrant_client import QdrantClient, models
-from dotenv import load_dotenv
+from unstructured.chunking.title import chunk_by_title
+from unstructured.partition.auto import partition
 
 # Set up logging
 logging.basicConfig(filename='./logs/qdrant_vectorstore.log', level=logging.INFO,
@@ -48,6 +51,30 @@ def get_text_chunks(text):
     chunks = text_splitter.split_text(text)
     return chunks
 
+def partition_and_chunk_by_title(folder_path):
+    """
+    Partitions and chunks .docx documents in the specified folder.
+
+    This function processes each .docx file within the given folder. It first partitions
+    the document into sections based on titles or headings. Each section is then
+    chunked into smaller parts. The function aggregates these chunks from all
+    documents into a single list, suitable for uploading to a vector database.
+
+    :param folder_path: Path to the folder containing .docx files.
+    :return: A list of text chunks from all the partitioned and chunked documents.
+    """
+    chunks = []
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".docx"):
+            file_path = os.path.join(folder_path, filename)
+            logging.info(f"Processing file: {filename}")
+            elements = partition(filename=file_path)
+            document_chunks = chunk_by_title(elements)
+            chunks.extend(str(d) for d in document_chunks)
+
+    return chunks
+
+        
 def get_vector_store():
     """
     Initializes and returns a Qdrant vector store client.
@@ -83,7 +110,6 @@ def reset_collection(vector_store, collection_name):
     logging.info(f"Deleted collection '{collection_name}'.")
 
     # Recreate the collection
-    # Note: You'll need to specify the collection configuration as per your requirements
     vector_store.client.create_collection(
         collection_name,
         vectors_config=models.VectorParams(
@@ -103,8 +129,13 @@ def main():
     load_dotenv()
 
     path_to_documents = "./documents/"
-    all_document_texts = read_docx_from_folder(path_to_documents)
-    text_chunks = get_text_chunks(all_document_texts)
+
+    # Naive chunking...
+    # all_document_texts = read_docx_from_folder(path_to_documents)
+    # text_chunks = get_text_chunks(all_document_texts)
+
+    # Much smarter chunking and reads Tables!
+    text_chunks = partition_and_chunk_by_title(path_to_documents)
 
     vector_store = get_vector_store()
 
