@@ -36,7 +36,7 @@ To get started with the applications in this repository, follow these steps:
 To update the Qdrant vector store with new document chunks, run the `update_qdrant_database.py` script. This script processes `.docx` files, partitions, and chunks the documents for vector storage.
 
 1. **Set Environment Variables**:  
-   Ensure that the necessary environment variables are set in your environment or a `.env` file. These include `QDRANT_HOST`, `QDRANT_API_KEY`, and `QDRANT_COLLECTION_NAME`.
+   Ensure that the necessary environment variables are set in your environment or a `.env` file. These include `QDRANT_HOST`, `QDRANT_API_KEY`,`QDRANT_COLLECTION_NAME`, `OPENAI_API_KEY` and `COHERE_API_KEY`.
 
 2. **Run the Script**:  
    Execute the script by running:
@@ -57,3 +57,14 @@ To run the `agent_chat_app.py` using Streamlit:
 2. **Interact with the App**:  
    Once the Streamlit server is running, it will open a web interface in your default browser. Here, you can interact with the chat application, asking questions and receiving responses based on the multimodality documents in your Qdrant vector store.
 
+## Next Steps
+
+Here's a checklist of upcoming enhancements and features for the **My Documents Chat** project:
+
+- [ ] **Images as Input**: Implement functionality to accept and process image-based inputs in the chat applications.
+
+- [ ] **Daily Script Run**: Set up a system to automatically run certain scripts daily, ensuring up-to-date data and functionality.
+
+- [ ] **Smarter Database Update with Hashing**: Improve the database update process by incorporating hashing techniques. This will help in identifying and managing changes more efficiently.
+
+- [ ] **Caching for LLM Responses**: Implement caching mechanisms for responses from large language models (LLMs) to speed up response times and reduce API calls.
