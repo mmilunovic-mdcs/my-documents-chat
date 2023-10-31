@@ -1,0 +1,6 @@
+langchain==0.0.327
+python-dotenv==1.0.0
+python_docx==1.0.1
+qdrant_client==1.6.4
+streamlit==1.27.2
+unstructured==0.10.27
