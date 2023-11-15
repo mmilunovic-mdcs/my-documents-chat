@@ -61,10 +61,12 @@ To run the `agent_chat_app.py` using Streamlit:
 
 Here's a checklist of upcoming enhancements and features for the **My Documents Chat** project:
 
+- [ ] **Solve memmory issue with ReAct agent**: Langchain's ReAct agent doesn't seem to use memmory.
+
 - [ ] **Images as Input**: Implement functionality to accept and process image-based inputs in the chat applications.
 
 - [ ] **Daily Script Run**: Set up a system to automatically run certain scripts daily, ensuring up-to-date data and functionality.
 
-- [ ] **Smarter Database Update with Hashing**: Improve the database update process by incorporating hashing techniques. This will help in identifying and managing changes more efficiently.
+- [x] **Smarter Database Update with Hashing**: Improve the database update process by incorporating hashing techniques. This will help in identifying and managing changes more efficiently.
 
-- [ ] **Caching for LLM Responses**: Implement caching mechanisms for responses from large language models (LLMs) to speed up response times and reduce API calls.
+- [x] **Caching for LLM Responses**: Implement caching mechanisms for responses from large language models (LLMs) to speed up response times and reduce API calls.
